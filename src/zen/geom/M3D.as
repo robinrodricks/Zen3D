@@ -1,7 +1,7 @@
 package zen.geom {
 	import flash.geom.*;
 	
-	/// The Matrix3DUtils class contains help tools to work with Matrix3D-type objects.
+	/** Primitive geometric calculations for 3D matrices */
 	public class M3D {
 		
 		private static var _raw:Vector.<Number> = new Vector.<Number>(16, true);
@@ -479,22 +479,12 @@ package zen.geom {
 		
 		/** create a new 4x4 matrix from 3x3 rotation matrix (default position and scale) */
 		public static function New3x3(x1:Number, x2:Number, x3:Number, y1:Number, y2:Number, y3:Number, z1:Number, z2:Number, z3:Number):Matrix3D {
-			return new Matrix3D(Vector.<Number>([
-				x1, x2, x3, 0,
-				y1, y2, y3, 0,
-				z1, z2, z3, 0,
-				0, 0, 0, 1
-			]));
+			return new Matrix3D(Vector.<Number>([x1, x2, x3, 0, y1, y2, y3, 0, z1, z2, z3, 0, 0, 0, 0, 1]));
 		}
 		
 		/** create a new 4x4 matrix */
 		public static function New4x4(x1:Number, x2:Number, x3:Number, x4:Number, y1:Number, y2:Number, y3:Number, y4:Number, z1:Number, z2:Number, z3:Number, z4:Number, w1:Number, w2:Number, w3:Number, w4:Number):Matrix3D {
-			return new Matrix3D(Vector.<Number>([
-				x1, x2, x3, x4,
-				y1, y2, y3, y4,
-				z1, z2, z3, z4,
-				w1, w2, w3, w4
-			]));
+			return new Matrix3D(Vector.<Number>([x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4, w1, w2, w3, w4]));
 		}
 		
 		/** create a new Axis-Angle rotation matrix */
@@ -502,8 +492,8 @@ package zen.geom {
 			
 			angle = (toRadians * angle);
 			var nCos:Number = Math.cos(angle);
-            var nSin:Number = Math.sin(angle);
-            var scos:Number = 1 - nCos;
+			var nSin:Number = Math.sin(angle);
+			var scos:Number = 1 - nCos;
 			
 			// convert to unit values
 			vector = V3D.normalize(vector);
@@ -511,29 +501,21 @@ package zen.geom {
 			var u:Number = vector.x;
 			var v:Number = vector.y;
 			var w:Number = vector.z;
-            var suv:Number = u * v * scos;
-            var svw:Number = v * w * scos;
-            var suw:Number = u * w * scos;
-            var sw:Number = nSin * w;
-            var sv:Number = nSin * v;
-            var su:Number = nSin * u;
+			var suv:Number = u * v * scos;
+			var svw:Number = v * w * scos;
+			var suw:Number = u * w * scos;
+			var sw:Number = nSin * w;
+			var sv:Number = nSin * v;
+			var su:Number = nSin * u;
 			
-			return New3x3(
-				nCos + u * u * scos,
-				-sw   + suv,
-				sv   + suw,
-				
-				sw   + suv,
-				nCos + v * v * scos,
-				-su   + svw,
-				
-				-sv   + suw,
-				su   + svw,
-				nCos + w * w * scos
-			);
+			return New3x3(nCos + u * u * scos, -sw + suv, sv + suw,
 			
+			sw + suv, nCos + v * v * scos, -su + svw,
+			
+			-sv + suw, su + svw, nCos + w * w * scos);
+		
 		}
-        
+		
 		/** create a new Euler rotation matrix in XY order */
 		public static function NewEulerXYRotation(x360:Number, y360:Number):Matrix3D {
 			
@@ -547,20 +529,13 @@ package zen.geom {
 			var sinry:Number = Math.sin(ry);
 			
 			// calculate a transform matrix for Local X and Local Y rotation
-			return New3x3(
-				cosry ,
-				0 ,
-				sinry ,
-				
-				sinrx * sinry ,
-				cosrx ,
-				-cosry * sinrx ,
-				
-				-cosrx * sinry ,
-				sinrx ,
-				cosrx * cosry
-			);
+			return New3x3(cosry, 0, sinry,
+			
+			sinrx * sinry, cosrx, -cosry * sinrx,
+			
+			-cosrx * sinry, sinrx, cosrx * cosry);
 		}
+		
 		/** create a new Euler rotation matrix in XYZ order */
 		public static function NewEulerXYZRotation(x360:Number = 0, y360:Number = 0, z360:Number = 0):Matrix3D {
 			
@@ -580,34 +555,20 @@ package zen.geom {
 			var sinrz:Number = Math.sin(rz);
 			
 			// calculate a transform matrix for Local X, Y and Z rotation
-			return New3x3(
-				cosry * cosrz ,
-				-cosry * sinrz ,
-				sinry ,
-				
-				cosrx * sinrz + cosrz * sinrx * sinry ,
-				cosrx * cosrz - sinrx * sinry * sinrz ,
-				-cosry * sinrx ,
-				
-				sinrx * sinrz - cosrx * cosrz * sinry ,
-				cosrz * sinrx + cosrx * sinry * sinrz ,
-				cosrx * cosry
-			);
+			return New3x3(cosry * cosrz, -cosry * sinrz, sinry,
+			
+			cosrx * sinrz + cosrz * sinrx * sinry, cosrx * cosrz - sinrx * sinry * sinrz, -cosry * sinrx,
+			
+			sinrx * sinrz - cosrx * cosrz * sinry, cosrz * sinrx + cosrx * sinry * sinrz, cosrx * cosry);
 		}
-		
-		
-		
-		
-		
 		
 		//*************************** STATIC ***************************
 		
 		// precalc math
 		public static const MathPI:Number = 3.141592653589793; // Math.PI
-        public static const toDegrees:Number = 57.29577951308233; // 180 / Math.PI
-        public static const toRadians:Number = 0.0174532925199433; // Math.PI / 180
-		
-		
+		public static const toDegrees:Number = 57.29577951308233; // 180 / Math.PI
+		public static const toRadians:Number = 0.0174532925199433; // Math.PI / 180
+	
 	}
 }
 

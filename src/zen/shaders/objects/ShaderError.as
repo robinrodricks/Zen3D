@@ -13,14 +13,12 @@
 			this.line = line;
 		}
 		
-		
 		public function toString():String {
 			if (((!((this.line == -1))) && (!((this.pos == -1))))) {
 				return (((((("Line: " + this.line) + " col: ") + this.pos) + " - ") + message));
 			}
 			return (message);
 		}
-	
 	
 	}
 }

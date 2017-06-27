@@ -23,21 +23,19 @@
 	import flash.display3D.*;
 	import flash.geom.*;
 	
-	
 	/** ZSL Engine is a JIT compiler for the high-level ZSL shaders into low-level AGAL shaders.
-	 * 
+	 *
 	 * Merges all of the "Filters" per Material into an optimized AGAL program.
-	 * 
+	 *
 	 * - It allow you to modify the appearance of each object / material / pixel on the screen.
 	 * - You can not only make things look better, but also faster!
 	 * - It gives to you full control, it puts all the render pipeline into your hands!! you will be able to twist the engine to its limits!
 	 * - It’s a very simple and powerful language, you will not need to deal with AGAL/Assembler or low level code.
 	 * - It produces optimized bytecode and deals with all the hard and boring stuff for you
 	 * - It is the first shader language based on a dynamic virtual machine
-	 * 
+	 *
 	 * */
 	public class ShaderCompiler extends ShaderBase {
-		
 		
 		private static const evalValues:Vector.<Number> = new Vector.<Number>(4, true);
 		private static const UP:int = (((1 | (1 << 2)) | (1 << 4)) | (1 << 6));
@@ -89,9 +87,6 @@
 		public static var OPS:Array = [];
 		public static var agalVersion:int = 1;
 		
-		
-		
-		
 		// STATIC INIT
 		
 		public static function init():void {
@@ -104,251 +99,231 @@
 			_registers[ZSLFlags.R_SAMPLER] = new ShaderRegister();
 			_registers[ZSLFlags.R_DEPTH] = new ShaderRegister();
 			
-            OPS = ["mov", "add", "sub", "mul", "div", "rcp", "min", "max", "frc", "sqr", "rsq", "pow", "log", "exp", "nrm", "sin", "cos", "crs", "dp3", "dp4", "abs", "neg", "sat", "m33", "m44", "m34", "ddx", "ddy", "ife", "ine", "ifg", "ilt", "els", "eif", null, null, null, null, "ted", "kill", "tex", "sge", "slt", null, "seq", "sne"];
+			OPS = ["mov", "add", "sub", "mul", "div", "rcp", "min", "max", "frc", "sqr", "rsq", "pow", "log", "exp", "nrm", "sin", "cos", "crs", "dp3", "dp4", "abs", "neg", "sat", "m33", "m44", "m34", "ddx", "ddy", "ife", "ine", "ifg", "ilt", "els", "eif", null, null, null, null, "ted", "kill", "tex", "sge", "slt", null, "seq", "sne"];
 			OPS[160] = "#get";
-            OPS[161] = "#get_ns";
-            OPS[162] = "#parent";
-            OPS[163] = "#parent_n";
-            OPS[164] = "#call";
-            OPS[165] = "#agal";
-            OPS[166] = "#null";
-            OPS[167] = "#ret";
-            OPS[176] = "#prop";
-            OPS[177] = "#index";
-            OPS[178] = "#meta";
-            OPS[192] = "#dup";
-            OPS[193] = "#swap";
-            OPS[208] = "#or";
-            OPS[209] = "#and";
-            OPS[210] = "#not";
-            OPS[224] = "#if";
-            OPS[225] = "#jump";
-            OPS[226] = "#sge";
-            OPS[227] = "#slt";
-            OPS[228] = "#seq";
-            OPS[229] = "#sne";
-            OPS[240] = "#debug_d";
-            OPS[241] = "#debug";
+			OPS[161] = "#get_ns";
+			OPS[162] = "#parent";
+			OPS[163] = "#parent_n";
+			OPS[164] = "#call";
+			OPS[165] = "#agal";
+			OPS[166] = "#null";
+			OPS[167] = "#ret";
+			OPS[176] = "#prop";
+			OPS[177] = "#index";
+			OPS[178] = "#meta";
+			OPS[192] = "#dup";
+			OPS[193] = "#swap";
+			OPS[208] = "#or";
+			OPS[209] = "#and";
+			OPS[210] = "#not";
+			OPS[224] = "#if";
+			OPS[225] = "#jump";
+			OPS[226] = "#sge";
+			OPS[227] = "#slt";
+			OPS[228] = "#seq";
+			OPS[229] = "#sne";
+			OPS[240] = "#debug_d";
+			OPS[241] = "#debug";
 		}
-		
-		
 		
 		// COMPILE SHADER CODE TO BYTES
 		
-        public static var libs:Vector.<ByteArray> = new Vector.<ByteArray>();
+		public static var libs:Vector.<ByteArray> = new Vector.<ByteArray>();
 		
-        public static function compileShader(source:String):ByteArray
-        {
-            var l:ByteArray;
+		public static function compileShader(source:String):ByteArray {
+			var l:ByteArray;
 			
 			// parse source code
-            var tokens:Vector.<ShaderToken> = ShaderTokenizer.parse(source);
+			var tokens:Vector.<ShaderToken> = ShaderTokenizer.parse(source);
 			
 			// reset engine state
-            ShaderCompiler.gc();
-            ShaderParser.reset();
+			ShaderCompiler.gc();
+			ShaderParser.reset();
 			
 			// ???
-            if (libs){
-                for each (l in libs) {
-                    ShaderParser.bind(l);
-                }
-            }
+			if (libs) {
+				for each (l in libs) {
+					ShaderParser.bind(l);
+				}
+			}
 			
 			// ???
-            var bytes:ByteArray = ShaderParser.parse(tokens);
-            return (bytes);
-        }
-
-		
-		
+			var bytes:ByteArray = ShaderParser.parse(tokens);
+			return (bytes);
+		}
 		
 		// DECOMPILE SHADER BYTES TO CODE
 		
-        private static var _disState:int;
-        private static var _disVertexCount:int;
-        private static var _disFragmentCount:int;
-        private static var _disResult:String;
-
+		private static var _disState:int;
+		private static var _disVertexCount:int;
+		private static var _disFragmentCount:int;
+		private static var _disResult:String;
+		
 		/** Helper to trace binary AGAL code as strings. */
-        public static function decompile(vtx:ByteArray, frg:ByteArray):String
-        {
-            _disVertexCount = 0;
-            _disFragmentCount = 0;
-            _disResult = "";
-            _disState = 0;
-            vtx.position = 7;
-            while (vtx.bytesAvailable > 0) {
-                getOpCode(++_disVertexCount, vtx.readUnsignedInt(), vtx);
-            }
-            _disResult = (_disResult + "-----------\n");
-            _disState = 1;
-            frg.position = 7;
-            while (frg.bytesAvailable > 0) {
-                getOpCode(++_disFragmentCount, frg.readUnsignedInt(), frg);
-            }
-            _disResult = (_disResult + "-----------\n");
-            _disResult = (_disResult + ((("vertex: " + _disVertexCount) + " / fragment: ") + _disFragmentCount));
-            return (_disResult);
-        }
-
-        public static function printVertex(bytes:ByteArray):String
-        {
-            _disState = 0;
-            _disResult = "";
-            _disVertexCount = 0;
-            bytes.position = 7;
-            while (bytes.bytesAvailable > 0) {
-                getOpCode(++_disVertexCount, bytes.readUnsignedInt(), bytes);
-            }
-            return (_disResult);
-        }
-
-        public static function printFragment(bytes:ByteArray):String
-        {
-            _disState = 1;
-            _disResult = "";
-            _disFragmentCount = 0;
-            bytes.position = 7;
-            while (bytes.bytesAvailable > 0) {
-                getOpCode(++_disFragmentCount, bytes.readUnsignedInt(), bytes);
-            }
-            return (_disResult);
-        }
-
-        private static function getOpCode(count:int, id:int, bytes:ByteArray):void
-        {
-            switch (id){
-                case ZSLOpcode.MOV:
-                case ZSLOpcode.SAT:
-                case ZSLOpcode.FRC:
-                case ZSLOpcode.RCP:
-                case ZSLOpcode.SQRT:
-                case ZSLOpcode.RSQ:
-                case ZSLOpcode.LOG:
-                case ZSLOpcode.EXP:
-                case ZSLOpcode.NRM:
-                case ZSLOpcode.SIN:
-                case ZSLOpcode.COS:
-                case ZSLOpcode.ABS:
-                case ZSLOpcode.NEG:
-                    _disResult = (_disResult + (((((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getDest(bytes)) + " ") + getSource(bytes)) + " ") + getNull(bytes)) + "\n"));
-                    break;
-                case ZSLOpcode.KILL:
-                    bytes.readUnsignedShort();
-                    bytes.readUnsignedByte();
-                    bytes.readUnsignedByte();
-                    _disResult = (_disResult + (((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getSource(bytes)) + " ") + getNull(bytes)) + "\n"));
-                    break;
-                case ZSLOpcode.TEX:
-                case ZSLOpcode.TED:
-                    _disResult = (_disResult + (((((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getDest(bytes)) + " ") + getSource(bytes)) + " ") + getSampler(bytes)) + "\n"));
-                    break;
-                default:
-                    _disResult = (_disResult + (((((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getDest(bytes)) + " ") + getSource(bytes)) + " ") + getSource(bytes)) + "\n"));
-            }
-        }
-
-        private static function getNull(bytes:ByteArray):String
-        {
-            bytes.readUnsignedInt();
-            bytes.readUnsignedInt();
-            return ("");
-        }
-
-        private static function getDest(bytes:ByteArray):String
-        {
-            var index:int = bytes.readUnsignedShort();
-            var dmask:int = bytes.readUnsignedByte();
-            var data:int = bytes.readUnsignedByte();
-            var dsmask:String = "";
-            if ((dmask & 1)){
-                dsmask = (dsmask + "x");
-            }
-            if ((dmask & 2)){
-                dsmask = (dsmask + "y");
-            }
-            if ((dmask & 4)){
-                dsmask = (dsmask + "z");
-            }
-            if ((dmask & 8)){
-                dsmask = (dsmask + "w");
-            }
-            return ((((getData(data) + index) + ".") + dsmask));
-        }
-
-        private static function getSource(bytes:ByteArray):String
-        {
-            var index:int = bytes.readUnsignedShort();
-            var indirect:int = bytes.readUnsignedByte();
-            var mask:int = bytes.readUnsignedByte();
-            var data:int = bytes.readUnsignedByte();
-            var rType:int = bytes.readUnsignedByte();
-            var rSelect:int = bytes.readUnsignedByte();
-            var rMode:int = bytes.readUnsignedByte();
-            if (rMode > 0){
-                return (((((((((((getData(data) + "[") + getData(rType)) + index) + ".") + "xyzw".charAt(rSelect)) + "+") + indirect) + "]") + ".") + maskToString(mask)));
-            }
-            return ((((getData(data) + index) + ".") + maskToString(mask)));
-        }
-
-        private static function getSampler(bytes:ByteArray):String
-        {
-            var index:int = bytes.readUnsignedShort();
-            var bias:int = bytes.readByte();
-            bytes.readByte();
-            var flags:uint = bytes.readUnsignedInt();
-            var filter:uint = (flags >> 28);
-            var mip:uint = ((flags >> 24) & 15);
-            var wrap:uint = ((flags >> 20) & 15);
-            var special:uint = ((flags >> 16) & 15);
-            var type:uint = ((flags >> 12) & 15);
-            var format:uint = ((flags >> 8) & 15);
-            var fs:String = (("fs" + index) + " <");
-            fs = (fs + ["fNearest", "fLinear"][filter]);
-            fs = (fs + ("," + ["mNone", "mNearest", "mLinear"][mip]));
-            fs = (fs + ("," + ["wClamp", "wRepeat"][wrap]));
-            fs = (fs + ("," + ["2d", "cube"][type]));
-            fs = (fs + ("," + ["rgba", "compressed", "compressedAlpha"][format]));
-            fs = (fs + (",b:" + bias));
-            return ((fs + ">"));
-        }
-
-        private static function getData(value:int):String
-        {
-            switch (value){
-                case 0:
-                    return ("va");
-                case 1:
-                    return ((((_disState == 0)) ? "vc" : "fc"));
-                case 2:
-                    return ((((_disState == 0)) ? "vt" : "ft"));
-                case 3:
-                    return ((((_disState == 0)) ? "vo" : "fo"));
-                case 4:
-                    return ("vi");
-                case 5:
-                    return ("fs");
-                case 6:
-                    return ("fd");
-            }
-            return ("?");
-        }
-
-        private static function maskToString(mask:int):String
-        {
-            var m:String;
-            var b:String = "xyzw";
-            m = b.charAt((mask & 3));
-            m = (m + b.charAt(((mask >> 2) & 3)));
-            m = (m + b.charAt(((mask >> 4) & 3)));
-            m = (m + b.charAt(((mask >> 6) & 3)));
-            return (m);
-        }
-
+		public static function decompile(vtx:ByteArray, frg:ByteArray):String {
+			_disVertexCount = 0;
+			_disFragmentCount = 0;
+			_disResult = "";
+			_disState = 0;
+			vtx.position = 7;
+			while (vtx.bytesAvailable > 0) {
+				getOpCode(++_disVertexCount, vtx.readUnsignedInt(), vtx);
+			}
+			_disResult = (_disResult + "-----------\n");
+			_disState = 1;
+			frg.position = 7;
+			while (frg.bytesAvailable > 0) {
+				getOpCode(++_disFragmentCount, frg.readUnsignedInt(), frg);
+			}
+			_disResult = (_disResult + "-----------\n");
+			_disResult = (_disResult + ((("vertex: " + _disVertexCount) + " / fragment: ") + _disFragmentCount));
+			return (_disResult);
+		}
 		
+		public static function printVertex(bytes:ByteArray):String {
+			_disState = 0;
+			_disResult = "";
+			_disVertexCount = 0;
+			bytes.position = 7;
+			while (bytes.bytesAvailable > 0) {
+				getOpCode(++_disVertexCount, bytes.readUnsignedInt(), bytes);
+			}
+			return (_disResult);
+		}
 		
+		public static function printFragment(bytes:ByteArray):String {
+			_disState = 1;
+			_disResult = "";
+			_disFragmentCount = 0;
+			bytes.position = 7;
+			while (bytes.bytesAvailable > 0) {
+				getOpCode(++_disFragmentCount, bytes.readUnsignedInt(), bytes);
+			}
+			return (_disResult);
+		}
 		
+		private static function getOpCode(count:int, id:int, bytes:ByteArray):void {
+			switch (id) {
+			case ZSLOpcode.MOV: 
+			case ZSLOpcode.SAT: 
+			case ZSLOpcode.FRC: 
+			case ZSLOpcode.RCP: 
+			case ZSLOpcode.SQRT: 
+			case ZSLOpcode.RSQ: 
+			case ZSLOpcode.LOG: 
+			case ZSLOpcode.EXP: 
+			case ZSLOpcode.NRM: 
+			case ZSLOpcode.SIN: 
+			case ZSLOpcode.COS: 
+			case ZSLOpcode.ABS: 
+			case ZSLOpcode.NEG: 
+				_disResult = (_disResult + (((((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getDest(bytes)) + " ") + getSource(bytes)) + " ") + getNull(bytes)) + "\n"));
+				break;
+			case ZSLOpcode.KILL: 
+				bytes.readUnsignedShort();
+				bytes.readUnsignedByte();
+				bytes.readUnsignedByte();
+				_disResult = (_disResult + (((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getSource(bytes)) + " ") + getNull(bytes)) + "\n"));
+				break;
+			case ZSLOpcode.TEX: 
+			case ZSLOpcode.TED: 
+				_disResult = (_disResult + (((((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getDest(bytes)) + " ") + getSource(bytes)) + " ") + getSampler(bytes)) + "\n"));
+				break;
+			default: 
+				_disResult = (_disResult + (((((((((count + " ") + ShaderCompiler.OPS[id]) + " ") + getDest(bytes)) + " ") + getSource(bytes)) + " ") + getSource(bytes)) + "\n"));
+			}
+		}
+		
+		private static function getNull(bytes:ByteArray):String {
+			bytes.readUnsignedInt();
+			bytes.readUnsignedInt();
+			return ("");
+		}
+		
+		private static function getDest(bytes:ByteArray):String {
+			var index:int = bytes.readUnsignedShort();
+			var dmask:int = bytes.readUnsignedByte();
+			var data:int = bytes.readUnsignedByte();
+			var dsmask:String = "";
+			if ((dmask & 1)) {
+				dsmask = (dsmask + "x");
+			}
+			if ((dmask & 2)) {
+				dsmask = (dsmask + "y");
+			}
+			if ((dmask & 4)) {
+				dsmask = (dsmask + "z");
+			}
+			if ((dmask & 8)) {
+				dsmask = (dsmask + "w");
+			}
+			return ((((getData(data) + index) + ".") + dsmask));
+		}
+		
+		private static function getSource(bytes:ByteArray):String {
+			var index:int = bytes.readUnsignedShort();
+			var indirect:int = bytes.readUnsignedByte();
+			var mask:int = bytes.readUnsignedByte();
+			var data:int = bytes.readUnsignedByte();
+			var rType:int = bytes.readUnsignedByte();
+			var rSelect:int = bytes.readUnsignedByte();
+			var rMode:int = bytes.readUnsignedByte();
+			if (rMode > 0) {
+				return (((((((((((getData(data) + "[") + getData(rType)) + index) + ".") + "xyzw".charAt(rSelect)) + "+") + indirect) + "]") + ".") + maskToString(mask)));
+			}
+			return ((((getData(data) + index) + ".") + maskToString(mask)));
+		}
+		
+		private static function getSampler(bytes:ByteArray):String {
+			var index:int = bytes.readUnsignedShort();
+			var bias:int = bytes.readByte();
+			bytes.readByte();
+			var flags:uint = bytes.readUnsignedInt();
+			var filter:uint = (flags >> 28);
+			var mip:uint = ((flags >> 24) & 15);
+			var wrap:uint = ((flags >> 20) & 15);
+			var special:uint = ((flags >> 16) & 15);
+			var type:uint = ((flags >> 12) & 15);
+			var format:uint = ((flags >> 8) & 15);
+			var fs:String = (("fs" + index) + " <");
+			fs = (fs + ["fNearest", "fLinear"][filter]);
+			fs = (fs + ("," + ["mNone", "mNearest", "mLinear"][mip]));
+			fs = (fs + ("," + ["wClamp", "wRepeat"][wrap]));
+			fs = (fs + ("," + ["2d", "cube"][type]));
+			fs = (fs + ("," + ["rgba", "compressed", "compressedAlpha"][format]));
+			fs = (fs + (",b:" + bias));
+			return ((fs + ">"));
+		}
+		
+		private static function getData(value:int):String {
+			switch (value) {
+			case 0: 
+				return ("va");
+			case 1: 
+				return ((((_disState == 0)) ? "vc" : "fc"));
+			case 2: 
+				return ((((_disState == 0)) ? "vt" : "ft"));
+			case 3: 
+				return ((((_disState == 0)) ? "vo" : "fo"));
+			case 4: 
+				return ("vi");
+			case 5: 
+				return ("fs");
+			case 6: 
+				return ("fd");
+			}
+			return ("?");
+		}
+		
+		private static function maskToString(mask:int):String {
+			var m:String;
+			var b:String = "xyzw";
+			m = b.charAt((mask & 3));
+			m = (m + b.charAt(((mask >> 2) & 3)));
+			m = (m + b.charAt(((mask >> 4) & 3)));
+			m = (m + b.charAt(((mask >> 6) & 3)));
+			return (m);
+		}
 		
 		// PRE ENTRY POINTS
 		
@@ -400,24 +375,24 @@
 				len = 1;
 			}
 			switch (type) {
-				case ZSLFlags.OUTPUT: 
-				case ZSLFlags.MATRIX: 
-				case ZSLFlags.PARAM: 
-				case ZSLFlags.CONST: 
-				case ZSLFlags.INPUT: 
-				case ZSLFlags.INTERPOLATED: 
-				case ZSLFlags.TEMPORAL: 
-				case ZSLFlags.OUTPUT: 
-					dataIndex = floatCount;
-					floatCount = (floatCount + ((size + 1) * len));
-					if (float.length < floatCount) {
-						float.length = floatCount;
-					}
-					break;
-				case ZSLFlags.SAMPLER2D: 
-				case ZSLFlags.SAMPLERCUBE: 
-					dataIndex = srcCount;
-					break;
+			case ZSLFlags.OUTPUT: 
+			case ZSLFlags.MATRIX: 
+			case ZSLFlags.PARAM: 
+			case ZSLFlags.CONST: 
+			case ZSLFlags.INPUT: 
+			case ZSLFlags.INTERPOLATED: 
+			case ZSLFlags.TEMPORAL: 
+			case ZSLFlags.OUTPUT: 
+				dataIndex = floatCount;
+				floatCount = (floatCount + ((size + 1) * len));
+				if (float.length < floatCount) {
+					float.length = floatCount;
+				}
+				break;
+			case ZSLFlags.SAMPLER2D: 
+			case ZSLFlags.SAMPLERCUBE: 
+				dataIndex = srcCount;
+				break;
 			}
 			var start:int = srcCount;
 			var i:int;
@@ -526,265 +501,264 @@
 				}
 				id = code.readUnsignedByte();
 				switch (id) {
-					case ZSLFlags.NULL: 
-						stack.push(0);
-						break;
-					case ZSLFlags.GET: 
-						e = code.readUnsignedByte();
-						if (verbose) {
-							trace("\tget", e, ShaderCompiler.registerToStr(curr.getLocal(e)));
-						}
-						if (!(curr.locals[e])) {
-							error(curr, (("Can not find reference to " + e) + "."));
-						}
-						stack.push(curr.getLocal(e));
-						curr = scope;
-						break;
-					case ZSLFlags.GET_NS: 
-						curr = (curr.globals[code.readUnsignedByte()] as ShaderContext);
-						if (!(calls[curr.code])) {
-							execute(curr, out);
-						}
-						break;
-					case ZSLFlags.PARENT: 
+				case ZSLFlags.NULL: 
+					stack.push(0);
+					break;
+				case ZSLFlags.GET: 
+					e = code.readUnsignedByte();
+					if (verbose) {
+						trace("\tget", e, ShaderCompiler.registerToStr(curr.getLocal(e)));
+					}
+					if (!(curr.locals[e])) {
+						error(curr, (("Can not find reference to " + e) + "."));
+					}
+					stack.push(curr.getLocal(e));
+					curr = scope;
+					break;
+				case ZSLFlags.GET_NS: 
+					curr = (curr.globals[code.readUnsignedByte()] as ShaderContext);
+					if (!(calls[curr.code])) {
+						execute(curr, out);
+					}
+					break;
+				case ZSLFlags.PARENT: 
+					curr = curr.parent;
+					if (verbose) {
+						trace("\tparent", curr);
+					}
+					break;
+				case ZSLFlags.PARENT_N: 
+					_local15 = code.readUnsignedByte();
+					while (_local15--) {
 						curr = curr.parent;
-						if (verbose) {
-							trace("\tparent", curr);
-						}
-						break;
-					case ZSLFlags.PARENT_N: 
-						_local15 = code.readUnsignedByte();
-						while (_local15--) {
-							curr = curr.parent;
-						}
-						if (verbose) {
-							trace("\tparent_n", curr);
-						}
-						break;
-					case ZSLFlags.CALL: 
-						e = code.readUnsignedByte();
-						if (verbose) {
-							trace("\tcall", e, curr.globals[e]);
-						}
-						func = (curr.globals[e] as ShaderContext);
-						if (!(func)) {
-							error(curr, (("Can not find reference to reference " + e) + "."));
-						}
-						i = (func.paramCount - 1);
-						while (i >= 0) {
-							func.locals[i] = stack.pop();
-							i--;
-						}
-						execute(func, out);
-						curr = scope;
-						break;
-					case ZSLFlags.PROP: 
-						_local16 = code.readUTF();
-						if (verbose) {
-							trace("\tprop", _local16);
-						}
-						if (!(isNaN(Number(_local16)))) {
-							stack.push(getNewRegisterOffset(stack.pop(), int(_local16)));
+					}
+					if (verbose) {
+						trace("\tparent_n", curr);
+					}
+					break;
+				case ZSLFlags.CALL: 
+					e = code.readUnsignedByte();
+					if (verbose) {
+						trace("\tcall", e, curr.globals[e]);
+					}
+					func = (curr.globals[e] as ShaderContext);
+					if (!(func)) {
+						error(curr, (("Can not find reference to reference " + e) + "."));
+					}
+					i = (func.paramCount - 1);
+					while (i >= 0) {
+						func.locals[i] = stack.pop();
+						i--;
+					}
+					execute(func, out);
+					curr = scope;
+					break;
+				case ZSLFlags.PROP: 
+					_local16 = code.readUTF();
+					if (verbose) {
+						trace("\tprop", _local16);
+					}
+					if (!(isNaN(Number(_local16)))) {
+						stack.push(getNewRegisterOffset(stack.pop(), int(_local16)));
+					} else {
+						stack.push(getNewRegisterFromMask(stack.pop(), ShaderCompiler.strToMask(_local16), _local16.length));
+					}
+					break;
+				case ZSLFlags.INDEX: 
+					src1 = stack.pop();
+					src0 = stack.pop();
+					if (((isConstant(src0)) && (isConstant(src1)))) {
+						val = getRegisterValue(src1, 0);
+						addr = (getSourceAddress((src0 & 0xFFFF)) + val);
+						reg = ((src0 & 0xFFFF0000) | addr);
+						stack.push(reg);
+					} else {
+						stack.push(setRegisterIndirectValue(src0, src1));
+					}
+					break;
+				case ZSLFlags.META: 
+					dest = stack.pop();
+					_local17 = code.readUTF();
+					_local18 = code.readUTF();
+					_local19 = globals[(dest & 0xFFFF)];
+					_local19[_local17] = _local18;
+					break;
+				case ZSLFlags.IF: 
+					_local20 = code.readShort();
+					dest = stack.pop();
+					if (verbose) {
+						trace("if", ShaderCompiler.registerToStr(dest), toBoolean(dest));
+					}
+					param = (globals[(dest & 0xFFFF)] as ShaderVar);
+					if (((param) && (!(param.value)))) {
+						param.value = getSourceValues((dest & 0xFFFF));
+					}
+					if (!(toBoolean(dest))) {
+						code.position = _local20;
+					}
+					break;
+				case ZSLFlags.JUMP: 
+					code.position = code.readShort();
+					break;
+				case ZSLFlags.NOT: 
+					src0 = stack.pop();
+					dest = alloc(("not:" + names[(src0 & 0xFFFF)]), (ZSLFlags.CONST << 16));
+					out.push(id, dest, src0, 0);
+					eval(id, dest, src0, src1);
+					stack.push(dest);
+					break;
+				case ZSLFlags.OR: 
+					src1 = stack.pop();
+					src0 = stack.pop();
+					if (toBoolean(src0)) {
+						stack.push(src0);
+					} else {
+						if (toBoolean(src1)) {
+							stack.push(src1);
 						} else {
-							stack.push(getNewRegisterFromMask(stack.pop(), ShaderCompiler.strToMask(_local16), _local16.length));
+							stack.push(alloc("null", (ZSLFlags.CONST << 16)));
 						}
-						break;
-					case ZSLFlags.INDEX: 
-						src1 = stack.pop();
+					}
+					break;
+				case ZSLFlags.AND: 
+				case ZSLFlags.SEQ: 
+				case ZSLFlags.SNE: 
+				case ZSLFlags.SGE: 
+				case ZSLFlags.SLT: 
+					src1 = stack.pop();
+					src0 = stack.pop();
+					dest = alloc((((("[" + names[(src0 & 0xFFFF)]) + ":") + names[(src1 & 0xFFFF)]) + "]"), (ZSLFlags.CONST << 16));
+					out.push(id, dest, src0, src1);
+					param = (globals[(src0 & 0xFFFF)] as ShaderVar);
+					if (((param) && (!(param.value)))) {
+						param.value = getSourceValues((src0 & 0xFFFF));
+					}
+					param = (globals[(src1 & 0xFFFF)] as ShaderVar);
+					if (((param) && (!(param.value)))) {
+						param.value = getSourceValues((src1 & 0xFFFF));
+					}
+					eval(id, dest, src0, src1);
+					stack.push(dest);
+					break;
+				case ZSLFlags.DEBUG: 
+					_local21 = code.readUnsignedByte();
+					_local22 = "";
+					while (_local21-- > 0) {
 						src0 = stack.pop();
-						if (((isConstant(src0)) && (isConstant(src1)))) {
-							val = getRegisterValue(src1, 0);
-							addr = (getSourceAddress((src0 & 0xFFFF)) + val);
-							reg = ((src0 & 0xFFFF0000) | addr);
-							stack.push(reg);
+						regSize = getRegisterSize(src0);
+						regType = getRegisterType(src0);
+						if (regType == ZSLFlags.STRING) {
+							res = names[(src0 & 0xFFFF)];
 						} else {
-							stack.push(setRegisterIndirectValue(src0, src1));
-						}
-						break;
-					case ZSLFlags.META: 
-						dest = stack.pop();
-						_local17 = code.readUTF();
-						_local18 = code.readUTF();
-						_local19 = globals[(dest & 0xFFFF)];
-						_local19[_local17] = _local18;
-						break;
-					case ZSLFlags.IF: 
-						_local20 = code.readShort();
-						dest = stack.pop();
-						if (verbose) {
-							trace("if", ShaderCompiler.registerToStr(dest), toBoolean(dest));
-						}
-						param = (globals[(dest & 0xFFFF)] as ShaderVar);
-						if (((param) && (!(param.value)))) {
-							param.value = getSourceValues((dest & 0xFFFF));
-						}
-						if (!(toBoolean(dest))) {
-							code.position = _local20;
-						}
-						break;
-					case ZSLFlags.JUMP: 
-						code.position = code.readShort();
-						break;
-					case ZSLFlags.NOT: 
-						src0 = stack.pop();
-						dest = alloc(("not:" + names[(src0 & 0xFFFF)]), (ZSLFlags.CONST << 16));
-						out.push(id, dest, src0, 0);
-						eval(id, dest, src0, src1);
-						stack.push(dest);
-						break;
-					case ZSLFlags.OR: 
-						src1 = stack.pop();
-						src0 = stack.pop();
-						if (toBoolean(src0)) {
-							stack.push(src0);
-						} else {
-							if (toBoolean(src1)) {
-								stack.push(src1);
-							} else {
-								stack.push(alloc("null", (ZSLFlags.CONST << 16)));
+							regValues = [];
+							s = 0;
+							while (s < regSize) {
+								regValues[s] = getRegisterValue(src0, s);
+								s++;
 							}
+							res = regValues.toString();
 						}
-						break;
-					case ZSLFlags.AND: 
-					case ZSLFlags.SEQ: 
-					case ZSLFlags.SNE: 
-					case ZSLFlags.SGE: 
-					case ZSLFlags.SLT: 
+						_local22 = ((res + " ") + _local22);
+					}
+					trace(_local22);
+					break;
+				case ZSLFlags.DEBUG_D: 
+					lastLine = code.readUnsignedShort();
+					lastPos = code.readUnsignedShort();
+					break;
+				case ZSLFlags.DUP: 
+					stack.push(stack[(stack.length - 1)]);
+					break;
+				case ZSLFlags.SWAP: 
+					src0 = stack.pop();
+					src1 = stack.pop();
+					stack.push(src0, src1);
+					break;
+				case ZSLFlags.AGAL: 
+					_local23 = code.readUnsignedByte();
+					_local24 = code.readUnsignedByte();
+					if (verbose) {
+						trace("\tagal", ("0x" + _local23.toString(16)), _local24);
+					}
+					if ((_local24 > 2)) {
 						src1 = stack.pop();
+					} else {
+						src1 = 0;
+					}
+					if ((_local24 > 1)) {
 						src0 = stack.pop();
-						dest = alloc((((("[" + names[(src0 & 0xFFFF)]) + ":") + names[(src1 & 0xFFFF)]) + "]"), (ZSLFlags.CONST << 16));
-						out.push(id, dest, src0, src1);
-						param = (globals[(src0 & 0xFFFF)] as ShaderVar);
-						if (((param) && (!(param.value)))) {
-							param.value = getSourceValues((src0 & 0xFFFF));
-						}
-						param = (globals[(src1 & 0xFFFF)] as ShaderVar);
-						if (((param) && (!(param.value)))) {
-							param.value = getSourceValues((src1 & 0xFFFF));
-						}
-						eval(id, dest, src0, src1);
-						stack.push(dest);
-						break;
-					case ZSLFlags.DEBUG: 
-						_local21 = code.readUnsignedByte();
-						_local22 = "";
-						while (_local21-- > 0) {
-							src0 = stack.pop();
-							regSize = getRegisterSize(src0);
-							regType = getRegisterType(src0);
-							if (regType == ZSLFlags.STRING) {
-								res = names[(src0 & 0xFFFF)];
-							} else {
-								regValues = [];
-								s = 0;
-								while (s < regSize) {
-									regValues[s] = getRegisterValue(src0, s);
-									s++;
-								}
-								res = regValues.toString();
-							}
-							_local22 = ((res + " ") + _local22);
-						}
-						trace(_local22);
-						break;
-					case ZSLFlags.DEBUG_D: 
-						lastLine = code.readUnsignedShort();
-						lastPos = code.readUnsignedShort();
-						break;
-					case ZSLFlags.DUP: 
-						stack.push(stack[(stack.length - 1)]);
-						break;
-					case ZSLFlags.SWAP: 
-						src0 = stack.pop();
-						src1 = stack.pop();
-						stack.push(src0, src1);
-						break;
-					case ZSLFlags.AGAL: 
-						_local23 = code.readUnsignedByte();
-						_local24 = code.readUnsignedByte();
-						if (verbose) {
-							trace("\tagal", ("0x" + _local23.toString(16)), _local24);
-						}
-						if ((_local24 > 2)) {
-							src1 = stack.pop();
-						} else {
-							src1 = 0;
-						}
-						if ((_local24 > 1)) {
-							src0 = stack.pop();
-						} else {
-							src0 = 0;
-						}
-						if ((_local24 > 0)) {
-							dest = stack.pop();
-						} else {
-							dest = 0;
-						}
-						if (((isConstant(src0)) && (isConstant(src1)))) {
-							temp = src0;
-							src0 = createFrom(src0, src1);
-							out.push(ZSLOpcode.MOV, src0, temp, 0);
-							eval(ZSLOpcode.MOV, src0, temp, 0);
-						}
-						out.push(_local23, dest, src0, src1);
-						eval(_local23, dest, src0, src1);
-						break;
-					case ZSLOpcode.MOV: 
-						if (verbose) {
-							trace("\tmov");
-						}
-						src0 = stack.pop();
+					} else {
+						src0 = 0;
+					}
+					if ((_local24 > 0)) {
 						dest = stack.pop();
-						if (src0) {
-							out.push(id, dest, src0, 0);
-							eval(id, dest, src0, 0);
-							if (getRegisterType(dest) == ZSLFlags.OUTPUT) {
-								if (names[(dest & 0xFFFF)] == Context3DProgramType.VERTEX) {
-									outputVertex = src0;
-								}
-								if (names[(dest & 0xFFFF)] == Context3DProgramType.FRAGMENT) {
-									outputFragment = src0;
-								}
-							}
-						} else {
-							states[getSourceAddress((dest & 0xFFFF))] = ZSLFlags.STATE_UNDEFINED;
-						}
-						break;
-					case ZSLOpcode.NEG: 
-						src0 = stack.pop();
-						if (isConstant(src0)) {
-							temp = src0;
-							src0 = createFrom(temp, temp);
-							out.push(ZSLOpcode.MOV, src0, temp, 0);
-							eval(ZSLOpcode.MOV, src0, temp, 0);
-						}
-						dest = alloc(("neg:" + names[(src0 & 0xFFFF)]), ((ZSLFlags.TEMPORAL << 16) | (((src0 >> 24) & 3) << 22)));
+					} else {
+						dest = 0;
+					}
+					if (((isConstant(src0)) && (isConstant(src1)))) {
+						temp = src0;
+						src0 = createFrom(src0, src1);
+						out.push(ZSLOpcode.MOV, src0, temp, 0);
+						eval(ZSLOpcode.MOV, src0, temp, 0);
+					}
+					out.push(_local23, dest, src0, src1);
+					eval(_local23, dest, src0, src1);
+					break;
+				case ZSLOpcode.MOV: 
+					if (verbose) {
+						trace("\tmov");
+					}
+					src0 = stack.pop();
+					dest = stack.pop();
+					if (src0) {
 						out.push(id, dest, src0, 0);
 						eval(id, dest, src0, 0);
-						stack.push(dest);
-						break;
-					case ZSLFlags.RET: 
-						return (((((stack.length) && (!((scope.varType == ZSLFlags.VOID))))) ? stack[(stack.length - 1)] : 0));
-					default: 
-						src1 = stack.pop();
-						src0 = stack.pop();
-						if (((isConstant(src0)) && (isConstant(src1)))) {
-							temp = src0;
-							src0 = createFrom(src0, src1);
-							out.push(ZSLOpcode.MOV, src0, temp, 0);
-							eval(ZSLOpcode.MOV, src0, temp, 0);
+						if (getRegisterType(dest) == ZSLFlags.OUTPUT) {
+							if (names[(dest & 0xFFFF)] == Context3DProgramType.VERTEX) {
+								outputVertex = src0;
+							}
+							if (names[(dest & 0xFFFF)] == Context3DProgramType.FRAGMENT) {
+								outputFragment = src0;
+							}
 						}
-						dest = createFrom(src0, src1);
-						stack.push(dest);
-						out.push(id, dest, src0, src1);
-						eval(id, dest, src0, src1);
+					} else {
+						states[getSourceAddress((dest & 0xFFFF))] = ZSLFlags.STATE_UNDEFINED;
+					}
+					break;
+				case ZSLOpcode.NEG: 
+					src0 = stack.pop();
+					if (isConstant(src0)) {
+						temp = src0;
+						src0 = createFrom(temp, temp);
+						out.push(ZSLOpcode.MOV, src0, temp, 0);
+						eval(ZSLOpcode.MOV, src0, temp, 0);
+					}
+					dest = alloc(("neg:" + names[(src0 & 0xFFFF)]), ((ZSLFlags.TEMPORAL << 16) | (((src0 >> 24) & 3) << 22)));
+					out.push(id, dest, src0, 0);
+					eval(id, dest, src0, 0);
+					stack.push(dest);
+					break;
+				case ZSLFlags.RET: 
+					return (((((stack.length) && (!((scope.varType == ZSLFlags.VOID))))) ? stack[(stack.length - 1)] : 0));
+				default: 
+					src1 = stack.pop();
+					src0 = stack.pop();
+					if (((isConstant(src0)) && (isConstant(src1)))) {
+						temp = src0;
+						src0 = createFrom(src0, src1);
+						out.push(ZSLOpcode.MOV, src0, temp, 0);
+						eval(ZSLOpcode.MOV, src0, temp, 0);
+					}
+					dest = createFrom(src0, src1);
+					stack.push(dest);
+					out.push(id, dest, src0, src1);
+					eval(id, dest, src0, src1);
 				}
 			}
 			return (((((stack.length) && (!((scope.varType == ZSLFlags.VOID))))) ? stack[(stack.length - 1)] : 0));
 		}
 		
 		private static function error(ns:ShaderContext, msg:String):void {
-			
 			
 			var s:ShaderContext;
 			var n:String = ((ns) ? ns.name : "null");
@@ -798,8 +772,7 @@
 				return;
 			}
 			throw(((n + " - ") + m.substr(0, -1)));
-			
-			
+		
 		}
 		
 		public static function createFrom(reg0:uint, reg1:uint, type:int = 1):uint {
@@ -809,9 +782,6 @@
 			var size:int = (((size0 > size1)) ? size0 : size1);
 			return (alloc(name, ((type << 16) | (size << 22))));
 		}
-		
-		
-		
 		
 		// MAIN ENTRY POINTS
 		
@@ -860,18 +830,18 @@
 				i = 0;
 				while (i < size) {
 					switch (op) {
-						case ZSLFlags.SEQ: 
-							result = ((result) && ((getRegisterValue(reg0, i) == getRegisterValue(reg1, i))));
-							break;
-						case ZSLFlags.SNE: 
-							result = ((result) || (!((getRegisterValue(reg0, i) == getRegisterValue(reg1, i)))));
-							break;
-						case ZSLFlags.SGE: 
-							result = ((result) && ((getRegisterValue(reg0, i) >= getRegisterValue(reg1, i))));
-							break;
-						case ZSLFlags.SLT: 
-							result = ((result) && ((getRegisterValue(reg0, i) < getRegisterValue(reg1, i))));
-							break;
+					case ZSLFlags.SEQ: 
+						result = ((result) && ((getRegisterValue(reg0, i) == getRegisterValue(reg1, i))));
+						break;
+					case ZSLFlags.SNE: 
+						result = ((result) || (!((getRegisterValue(reg0, i) == getRegisterValue(reg1, i)))));
+						break;
+					case ZSLFlags.SGE: 
+						result = ((result) && ((getRegisterValue(reg0, i) >= getRegisterValue(reg1, i))));
+						break;
+					case ZSLFlags.SLT: 
+						result = ((result) && ((getRegisterValue(reg0, i) < getRegisterValue(reg1, i))));
+						break;
 					}
 					i++;
 				}
@@ -881,58 +851,58 @@
 			i = 0;
 			while (i < size) {
 				switch (op) {
-					case ZSLOpcode.MOV: 
-						evalValues[i] = getRegisterValue(reg0, i);
-						break;
-					case ZSLOpcode.ADD: 
-						evalValues[i] = (getRegisterValue(reg0, i) + getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.SUB: 
-						evalValues[i] = (getRegisterValue(reg0, i) - getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.MUL: 
-						evalValues[i] = (getRegisterValue(reg0, i) * getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.DIV: 
-						evalValues[i] = (getRegisterValue(reg0, i) / getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.NEG: 
-						evalValues[i] = -(getRegisterValue(reg0, i));
-						break;
-					case ZSLOpcode.POW: 
-						evalValues[i] = Math.pow(getRegisterValue(reg0, i), getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.MAX: 
-						evalValues[i] = Math.max(getRegisterValue(reg0, i), getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.MIN: 
-						evalValues[i] = Math.min(getRegisterValue(reg0, i), getRegisterValue(reg1, i));
-						break;
-					case ZSLOpcode.SEQ: 
-						evalValues[i] = (((getRegisterValue(reg0, i) == getRegisterValue(reg1, i))) ? 1 : 0);
-						break;
-					case ZSLOpcode.SNE: 
-						evalValues[i] = ((!((getRegisterValue(reg0, i) == getRegisterValue(reg1, i)))) ? 1 : 0);
-						break;
-					case ZSLOpcode.SGE: 
-						evalValues[i] = (((getRegisterValue(reg0, i) >= getRegisterValue(reg1, i))) ? 1 : 0);
-						break;
-					case ZSLOpcode.SLT: 
-						evalValues[i] = (((getRegisterValue(reg0, i) < getRegisterValue(reg1, i))) ? 1 : 0);
-						break;
-					case ZSLOpcode.NRM: 
-						evalValues[i] = getRegisterValue(reg0, i);
-						break;
-					case ZSLFlags.NOT: 
-						evalValues[i] = Number(!(toBoolean(reg0)));
-						break;
-					case ZSLFlags.AND: 
-						evalValues[i] = Number(((toBoolean(reg0)) && (toBoolean(reg1))));
-						break;
-					case ZSLFlags.OR: 
-						evalValues[i] = Number(((toBoolean(reg0)) || (toBoolean(reg1))));
-					default: 
-						return;
+				case ZSLOpcode.MOV: 
+					evalValues[i] = getRegisterValue(reg0, i);
+					break;
+				case ZSLOpcode.ADD: 
+					evalValues[i] = (getRegisterValue(reg0, i) + getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.SUB: 
+					evalValues[i] = (getRegisterValue(reg0, i) - getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.MUL: 
+					evalValues[i] = (getRegisterValue(reg0, i) * getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.DIV: 
+					evalValues[i] = (getRegisterValue(reg0, i) / getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.NEG: 
+					evalValues[i] = -(getRegisterValue(reg0, i));
+					break;
+				case ZSLOpcode.POW: 
+					evalValues[i] = Math.pow(getRegisterValue(reg0, i), getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.MAX: 
+					evalValues[i] = Math.max(getRegisterValue(reg0, i), getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.MIN: 
+					evalValues[i] = Math.min(getRegisterValue(reg0, i), getRegisterValue(reg1, i));
+					break;
+				case ZSLOpcode.SEQ: 
+					evalValues[i] = (((getRegisterValue(reg0, i) == getRegisterValue(reg1, i))) ? 1 : 0);
+					break;
+				case ZSLOpcode.SNE: 
+					evalValues[i] = ((!((getRegisterValue(reg0, i) == getRegisterValue(reg1, i)))) ? 1 : 0);
+					break;
+				case ZSLOpcode.SGE: 
+					evalValues[i] = (((getRegisterValue(reg0, i) >= getRegisterValue(reg1, i))) ? 1 : 0);
+					break;
+				case ZSLOpcode.SLT: 
+					evalValues[i] = (((getRegisterValue(reg0, i) < getRegisterValue(reg1, i))) ? 1 : 0);
+					break;
+				case ZSLOpcode.NRM: 
+					evalValues[i] = getRegisterValue(reg0, i);
+					break;
+				case ZSLFlags.NOT: 
+					evalValues[i] = Number(!(toBoolean(reg0)));
+					break;
+				case ZSLFlags.AND: 
+					evalValues[i] = Number(((toBoolean(reg0)) && (toBoolean(reg1))));
+					break;
+				case ZSLFlags.OR: 
+					evalValues[i] = Number(((toBoolean(reg0)) || (toBoolean(reg1))));
+				default: 
+					return;
 				}
 				i++;
 			}
@@ -1080,37 +1050,37 @@
 						if (name != "depth") {
 							if ((((id == ZSLOpcode.MOV)) && ((getRegisterKind(dest) == ZSLFlags.R_OUTPUT)))) {
 								switch (typeof(prg[name])) {
-									case "string": 
-										prg[name] = names[(src0 & 0xFFFF)];
+								case "string": 
+									prg[name] = names[(src0 & 0xFFFF)];
+									break;
+								case "number": 
+									prg[name] = getRegisterValue(src0, 0);
+									break;
+								case "boolean": 
+									prg[name] = getRegisterValue(src0, 0);
+									break;
+								case "object": 
+									switch (name) {
+									case "scissor": 
+										prg.scissor = new Rectangle();
+										prg.scissor.x = getRegisterValue(src0, 0);
+										prg.scissor.y = getRegisterValue(src0, 1);
+										prg.scissor.width = getRegisterValue(src0, 2);
+										prg.scissor.height = getRegisterValue(src0, 3);
 										break;
-									case "number": 
-										prg[name] = getRegisterValue(src0, 0);
+									case "colorMask": 
+										prg.colorMask = Vector.<Boolean>(getSourceValues((src0 & 0xFFFF)));
 										break;
-									case "boolean": 
-										prg[name] = getRegisterValue(src0, 0);
+									case "target": 
+										prg.target = (globals[(src0 & 0xFFFF)] as ShaderTexture);
 										break;
-									case "object": 
-										switch (name) {
-										case "scissor": 
-											prg.scissor = new Rectangle();
-											prg.scissor.x = getRegisterValue(src0, 0);
-											prg.scissor.y = getRegisterValue(src0, 1);
-											prg.scissor.width = getRegisterValue(src0, 2);
-											prg.scissor.height = getRegisterValue(src0, 3);
-											break;
-										case "colorMask": 
-											prg.colorMask = Vector.<Boolean>(getSourceValues((src0 & 0xFFFF)));
-											break;
-										case "target": 
-											prg.target = (globals[(src0 & 0xFFFF)] as ShaderTexture);
-											break;
-										default: 
-											
-											throw((("property '" + name) + "' is not a valid program output."));
-											
-											return null;
+									default:
+										
+										throw((("property '" + name) + "' is not a valid program output."));
+										
+										return null;
 									}
-										break;
+									break;
 								}
 							}
 						}
@@ -1349,9 +1319,6 @@
 			}
 			return (out);
 		}
-		
-		
-		
 		
 		// COMPILATION UTILS
 		
@@ -1599,63 +1566,63 @@
 				allocProgramRegister(indirect[(register >> 26)], prg);
 			}
 			switch (type) {
-				case ZSLFlags.TEMPORAL: 
-				case ZSLFlags.OUTPUT: 
-				case ZSLFlags.INTERPOLATED: 
-					break;
-				case ZSLFlags.INPUT: 
-					_local11 = (globals[index] as ShaderInput);
-					prg.inputs.push(_local11);
-					break;
-				case ZSLFlags.CONST: 
-					_local12 = (((_state == Context3DProgramType.VERTEX)) ? prg.vertexConstants : prg.fragmentConstants);
-					_local13 = getSourceValues(index);
-					_local14 = (_registers[ZSLFlags.R_CONSTANT] as ShaderRegister).addr[getSourceAddress(index)];
-					if (_local12.length < (_local14 + _local13.length)) {
-						_local12.length = (_local14 + _local13.length);
+			case ZSLFlags.TEMPORAL: 
+			case ZSLFlags.OUTPUT: 
+			case ZSLFlags.INTERPOLATED: 
+				break;
+			case ZSLFlags.INPUT: 
+				_local11 = (globals[index] as ShaderInput);
+				prg.inputs.push(_local11);
+				break;
+			case ZSLFlags.CONST: 
+				_local12 = (((_state == Context3DProgramType.VERTEX)) ? prg.vertexConstants : prg.fragmentConstants);
+				_local13 = getSourceValues(index);
+				_local14 = (_registers[ZSLFlags.R_CONSTANT] as ShaderRegister).addr[getSourceAddress(index)];
+				if (_local12.length < (_local14 + _local13.length)) {
+					_local12.length = (_local14 + _local13.length);
+				}
+				i = 0;
+				while (i < _local13.length) {
+					_local12[(i + _local14)] = _local13[i];
+					i++;
+				}
+				break;
+			case ZSLFlags.PARAM: 
+				_local15 = (globals[index] as ShaderVar);
+				_local15.format = ("float" + size);
+				_local15.length = length;
+				if (_local15.semantic == "") {
+					if (((!(_local15.value)) || (((states[(register & 0xFFFF)] & ZSLFlags.STATE_USER_DEFINED) == 0)))) {
+						_local15.value = getSourceValues(index);
 					}
-					i = 0;
-					while (i < _local13.length) {
-						_local12[(i + _local14)] = _local13[i];
-						i++;
-					}
-					break;
-				case ZSLFlags.PARAM: 
-					_local15 = (globals[index] as ShaderVar);
-					_local15.format = ("float" + size);
-					_local15.length = length;
-					if (_local15.semantic == "") {
-						if (((!(_local15.value)) || (((states[(register & 0xFFFF)] & ZSLFlags.STATE_USER_DEFINED) == 0)))) {
-							_local15.value = getSourceValues(index);
+					i = size;
+					while (_local15.value.length < (4 * length)) {
+						e = 0;
+						while (e < (4 - size)) {
+							_local15.value.splice((i + e), 0, 1);
+							e++;
 						}
-						i = size;
-						while (_local15.value.length < (4 * length)) {
-							e = 0;
-							while (e < (4 - size)) {
-								_local15.value.splice((i + e), 0, 1);
-								e++;
-							}
-							i = (i + 4);
-						}
+						i = (i + 4);
 					}
-					prg.params.push(_local15);
-					prg.pTarget.push(_state);
-					prg.pOffset.push(getAddress(register));
-					break;
-				case ZSLFlags.MATRIX: 
-					_local16 = (globals[index] as ShaderMatrix);
-					if (!(_local16.semantic)) {
-						_local16.value = ((_local16.value) || (new Matrix3D(getSourceValues(index))));
-					}
-					prg.matrix.push(_local16);
-					prg.mTarget.push(_state);
-					prg.mOffset.push(getAddress(register));
-					break;
-				case ZSLFlags.SAMPLER2D: 
-				case ZSLFlags.SAMPLERCUBE: 
-					_local17 = (globals[index] as ShaderTexture);
-					prg.samplers.push(_local17);
-					break;
+				}
+				prg.params.push(_local15);
+				prg.pTarget.push(_state);
+				prg.pOffset.push(getAddress(register));
+				break;
+			case ZSLFlags.MATRIX: 
+				_local16 = (globals[index] as ShaderMatrix);
+				if (!(_local16.semantic)) {
+					_local16.value = ((_local16.value) || (new Matrix3D(getSourceValues(index))));
+				}
+				prg.matrix.push(_local16);
+				prg.mTarget.push(_state);
+				prg.mOffset.push(getAddress(register));
+				break;
+			case ZSLFlags.SAMPLER2D: 
+			case ZSLFlags.SAMPLERCUBE: 
+				_local17 = (globals[index] as ShaderTexture);
+				prg.samplers.push(_local17);
+				break;
 			}
 		}
 		
@@ -1724,20 +1691,20 @@
 			}
 			var flags:uint;
 			switch (id) {
-				case ZSLOpcode.M33: 
-				case ZSLOpcode.M34: 
-				case ZSLOpcode.NRM: 
-				case ZSLOpcode.CROSS: 
-					flags = (flags | F_MASK3);
-					break;
-				case ZSLOpcode.DP3: 
-				case ZSLOpcode.DP4: 
-				case ZSLOpcode.SGE: 
-				case ZSLOpcode.SLT: 
-				case ZSLOpcode.SEQ: 
-				case ZSLOpcode.SNE: 
-					flags = (flags | F_MASK1);
-					break;
+			case ZSLOpcode.M33: 
+			case ZSLOpcode.M34: 
+			case ZSLOpcode.NRM: 
+			case ZSLOpcode.CROSS: 
+				flags = (flags | F_MASK3);
+				break;
+			case ZSLOpcode.DP3: 
+			case ZSLOpcode.DP4: 
+			case ZSLOpcode.SGE: 
+			case ZSLOpcode.SLT: 
+			case ZSLOpcode.SEQ: 
+			case ZSLOpcode.SNE: 
+				flags = (flags | F_MASK1);
+				break;
 			}
 			var addr:uint = getStringAddr(dest);
 			if (((isFloat(dest)) && (!(_firstRead[addr])))) {
@@ -1933,9 +1900,6 @@
 			}
 		}
 		
-		
-		
-		
 		// UTILS?
 		
 		public static function getNewRegisterOffset(register:uint, offset:int):uint {
@@ -2050,24 +2014,24 @@
 		public static function getRegisterKind(register:uint):int {
 			var type:int = getRegisterType(register);
 			switch (type) {
-				case ZSLFlags.TEMPORAL: 
-					return (ZSLFlags.R_TEMPORAL);
-				case ZSLFlags.INPUT: 
-					return (ZSLFlags.R_INPUT);
-				case ZSLFlags.INTERPOLATED: 
-					return (ZSLFlags.R_INTERPOLATED);
-				case ZSLFlags.PARAM: 
-				case ZSLFlags.MATRIX: 
-				case ZSLFlags.CONST: 
-					return (ZSLFlags.R_CONSTANT);
-				case ZSLFlags.SAMPLER2D: 
-				case ZSLFlags.SAMPLERCUBE: 
-					return (ZSLFlags.R_SAMPLER);
-				case ZSLFlags.OUTPUT: 
-					if (names[(register & 0xFFFF)] == "depth") {
-						return (ZSLFlags.R_DEPTH);
-					}
-					return (ZSLFlags.R_OUTPUT);
+			case ZSLFlags.TEMPORAL: 
+				return (ZSLFlags.R_TEMPORAL);
+			case ZSLFlags.INPUT: 
+				return (ZSLFlags.R_INPUT);
+			case ZSLFlags.INTERPOLATED: 
+				return (ZSLFlags.R_INTERPOLATED);
+			case ZSLFlags.PARAM: 
+			case ZSLFlags.MATRIX: 
+			case ZSLFlags.CONST: 
+				return (ZSLFlags.R_CONSTANT);
+			case ZSLFlags.SAMPLER2D: 
+			case ZSLFlags.SAMPLERCUBE: 
+				return (ZSLFlags.R_SAMPLER);
+			case ZSLFlags.OUTPUT: 
+				if (names[(register & 0xFFFF)] == "depth") {
+					return (ZSLFlags.R_DEPTH);
+				}
+				return (ZSLFlags.R_OUTPUT);
 			}
 			return (-1);
 		}
@@ -2141,132 +2105,125 @@
 			return (float.slice(start, (start + (size * len))));
 		}
 		
-        public static function strToMask(str:String):int
-        {
-            var mask:int;
-            var i:int;
-            while (i < str.length) {
-                switch (str.charAt(i)){
-                    case "y":
-                    case "r":
-                        mask = (mask | (1 << (i << 1)));
-                        break;
-                    case "z":
-                    case "g":
-                        mask = (mask | (2 << (i << 1)));
-                        break;
-                    case "w":
-                    case "b":
-                        mask = (mask | (3 << (i << 1)));
-                        break;
-                }
-                i++;
-            }
-            return (mask);
-        }
-
-        public static function typeToStr(t:int):String
-        {
-            switch (t){
-                case ZSLFlags.VOID:
-                    return ("void");
-                case ZSLFlags.TEMPORAL:
-                    return ("float");
-                case ZSLFlags.PARAM:
-                    return ("param");
-                case ZSLFlags.CONST:
-                    return ("const");
-                case ZSLFlags.MATRIX:
-                    return ("matrix");
-                case ZSLFlags.SAMPLER2D:
-                    return ("sampler2D");
-                case ZSLFlags.SAMPLERCUBE:
-                    return ("samplerCube");
-                case ZSLFlags.INPUT:
-                    return ("input");
-                case ZSLFlags.INTERPOLATED:
-                    return ("interpolated");
-                case ZSLFlags.OUTPUT:
-                    return ("output");
-                case ZSLFlags.NAMESPACE:
-                    return ("namespace");
-                case ZSLFlags.FUNCTION:
-                    return ("function");
-                case ZSLFlags.TECHNIQUE:
-                    return ("technique");
-                case ZSLFlags.PASS:
-                    return ("pass");
-                case ZSLFlags.STRING:
-                    return ("string");
-                case ZSLFlags.SURFACE:
-                    return ("surface");
-            }
-            return (null);
-        }
-
-        public static function registerToStr(register:uint, mask:int=-1, size:int=-1):String
-        {
-            if (register == 0){
-                return ("");
-            }
-            if (mask == -1){
-                mask = ((register >> 16) & 0xFF);
-            }
-            if (size == -1){
-                size = (((register >> 24) & 3) + 1);
-            }
-            var index:int = (register & 0xFFFF);
-            var indirectReg:uint = ShaderCompiler.indirect[(register >> 26)];
-            var type:String = typeToStr(ShaderCompiler.getRegisterType(register));
-            return ((ShaderCompiler.names[index] + (((ShaderCompiler.isFloat(register) > 0)) ? ("." + maskToStr(mask, size)) : "")));
-        }
-
-        public static function maskToStr(mask:int, size:int):String
-        {
-            var i:int;
-            var idx:int;
-            var r:String = "";
-            while (i < size) {
-                idx = ((mask >> (i * 2)) & 3);
-                if (idx == 0){
-                    r = (r + "x");
-                } else {
-                    if (idx == 1){
-                        r = (r + "y");
-                    } else {
-                        if (idx == 2){
-                            r = (r + "z");
-                        } else {
-                            if (idx == 3){
-                                r = (r + "w");
-                            }
-                        }
-                    }
-                }
-                i++;
-            }
-            return (r);
-        }
-
-        public static function isScope(type:int):int
-        {
-            if (type == ZSLFlags.NAMESPACE){
-                return (type);
-            }
-            if (type == ZSLFlags.FUNCTION){
-                return (type);
-            }
-            if (type == ZSLFlags.TECHNIQUE){
-                return (type);
-            }
-            if (type == ZSLFlags.PASS){
-                return (type);
-            }
-            return (0);
-        }
-
+		public static function strToMask(str:String):int {
+			var mask:int;
+			var i:int;
+			while (i < str.length) {
+				switch (str.charAt(i)) {
+				case "y": 
+				case "r": 
+					mask = (mask | (1 << (i << 1)));
+					break;
+				case "z": 
+				case "g": 
+					mask = (mask | (2 << (i << 1)));
+					break;
+				case "w": 
+				case "b": 
+					mask = (mask | (3 << (i << 1)));
+					break;
+				}
+				i++;
+			}
+			return (mask);
+		}
 		
+		public static function typeToStr(t:int):String {
+			switch (t) {
+			case ZSLFlags.VOID: 
+				return ("void");
+			case ZSLFlags.TEMPORAL: 
+				return ("float");
+			case ZSLFlags.PARAM: 
+				return ("param");
+			case ZSLFlags.CONST: 
+				return ("const");
+			case ZSLFlags.MATRIX: 
+				return ("matrix");
+			case ZSLFlags.SAMPLER2D: 
+				return ("sampler2D");
+			case ZSLFlags.SAMPLERCUBE: 
+				return ("samplerCube");
+			case ZSLFlags.INPUT: 
+				return ("input");
+			case ZSLFlags.INTERPOLATED: 
+				return ("interpolated");
+			case ZSLFlags.OUTPUT: 
+				return ("output");
+			case ZSLFlags.NAMESPACE: 
+				return ("namespace");
+			case ZSLFlags.FUNCTION: 
+				return ("function");
+			case ZSLFlags.TECHNIQUE: 
+				return ("technique");
+			case ZSLFlags.PASS: 
+				return ("pass");
+			case ZSLFlags.STRING: 
+				return ("string");
+			case ZSLFlags.SURFACE: 
+				return ("surface");
+			}
+			return (null);
+		}
 		
+		public static function registerToStr(register:uint, mask:int = -1, size:int = -1):String {
+			if (register == 0) {
+				return ("");
+			}
+			if (mask == -1) {
+				mask = ((register >> 16) & 0xFF);
+			}
+			if (size == -1) {
+				size = (((register >> 24) & 3) + 1);
+			}
+			var index:int = (register & 0xFFFF);
+			var indirectReg:uint = ShaderCompiler.indirect[(register >> 26)];
+			var type:String = typeToStr(ShaderCompiler.getRegisterType(register));
+			return ((ShaderCompiler.names[index] + (((ShaderCompiler.isFloat(register) > 0)) ? ("." + maskToStr(mask, size)) : "")));
+		}
+		
+		public static function maskToStr(mask:int, size:int):String {
+			var i:int;
+			var idx:int;
+			var r:String = "";
+			while (i < size) {
+				idx = ((mask >> (i * 2)) & 3);
+				if (idx == 0) {
+					r = (r + "x");
+				} else {
+					if (idx == 1) {
+						r = (r + "y");
+					} else {
+						if (idx == 2) {
+							r = (r + "z");
+						} else {
+							if (idx == 3) {
+								r = (r + "w");
+							}
+						}
+					}
+				}
+				i++;
+			}
+			return (r);
+		}
+		
+		public static function isScope(type:int):int {
+			if (type == ZSLFlags.NAMESPACE) {
+				return (type);
+			}
+			if (type == ZSLFlags.FUNCTION) {
+				return (type);
+			}
+			if (type == ZSLFlags.TECHNIQUE) {
+				return (type);
+			}
+			if (type == ZSLFlags.PASS) {
+				return (type);
+			}
+			return (0);
+		}
+	
 	}
-} 
+}
 

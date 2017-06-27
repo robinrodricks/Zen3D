@@ -5,8 +5,9 @@ package zen.display {
 	import zen.display.*;
 	import zen.materials.*;
 	import zen.shaders.textures.*;
-    import zen.geom.*;
+	import zen.geom.*;
 	
+	/** A static class that provides methods to create various types of 3D primitives */
 	public class ZenPrimitives {
 		
 		public static function Arrow(name:String = "arrow", length:Number = 50, size:Number = 5, color:int = 0xFFCB00, alpha:Number = 1):ZenCanvas {
@@ -546,7 +547,7 @@ package zen.display {
 		public static function Pie(name:String = "", from:Number = 1, to:Number = 10, radius:Number = 20, height:Number = 5, material:ShaderMaterialBase = null):ZenMesh {
 			var obj:ZenMesh = new ZenMesh(name);
 			
-			if (!material){
+			if (!material) {
 				material = new ZenMaterial(name + "_material");
 			}
 			

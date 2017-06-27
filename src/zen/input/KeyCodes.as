@@ -1,5 +1,6 @@
 package zen.input {
 	
+	/** Provides constants for detecting specific key codes */
 	public class KeyCodes {
 		
 		// non-text keys
@@ -63,7 +64,7 @@ package zen.input {
 		public static const _7:int = 55;
 		public static const _8:int = 56;
 		public static const _9:int = 57;
-
+		
 		public static const _0_RoundBracketClose:int = 48;
 		public static const _1_Exclamation:int = 49;
 		public static const _2_AtTheRate_Email:int = 50;
@@ -117,8 +118,7 @@ package zen.input {
 		public static const F13:int = 124;
 		public static const F14:int = 125;
 		public static const F15:int = 126;
-		
-		
+	
 	}
 
 }

@@ -1,7 +1,7 @@
 package zen.geom {
 	import flash.geom.Vector3D;
 	
-	/// The Vector3DUtils class contains help tools to work with Vector3D-type objects.
+	/** Primitive geometric calculations for 3D vectors and points */
 	public class V3D {
 		
 		public static var UP:Vector3D = new Vector3D(0, 1, 0);
@@ -55,7 +55,6 @@ package zen.geom {
 			}
 		}
 		
-		
 		public static function sub(a:Vector3D, b:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -65,6 +64,7 @@ package zen.geom {
 			out.z = (a.z - b.z);
 			return (out);
 		}
+		
 		public static function add(a:Vector3D, b:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -74,6 +74,7 @@ package zen.geom {
 			out.z = (a.z + b.z);
 			return (out);
 		}
+		
 		public static function multiply(a:Vector3D, b:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -83,6 +84,7 @@ package zen.geom {
 			out.z = (a.z * b.z);
 			return (out);
 		}
+		
 		public static function multiplyNum(a:Vector3D, num:Number, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -92,6 +94,7 @@ package zen.geom {
 			out.z = (a.z * num);
 			return (out);
 		}
+		
 		public static function divide(a:Vector3D, b:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -101,6 +104,7 @@ package zen.geom {
 			out.z = (a.z / b.z);
 			return (out);
 		}
+		
 		public static function divideNum(a:Vector3D, num:Number, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -117,9 +121,10 @@ package zen.geom {
 			write.z = z;
 			write.w = w;
 		}
+		
 		public static function setTo(write:Vector3D, read:Vector3D):void {
 			
-			if (write == read){
+			if (write == read) {
 				return;
 			}
 			
@@ -148,6 +153,7 @@ package zen.geom {
 			out.z = (a.z + ((b.z - a.z) * value));
 			return (out);
 		}
+		
 		public static function random(min:Number, max:Number, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -157,6 +163,7 @@ package zen.geom {
 			out.z = ((Math.random() * (max - min)) + min);
 			return (out);
 		}
+		
 		public static function mirror(vector:Vector3D, normal:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -177,6 +184,7 @@ package zen.geom {
 			out.z = (((a.z < b.z)) ? a.z : b.z);
 			return (out);
 		}
+		
 		public static function max(a:Vector3D, b:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -216,7 +224,6 @@ package zen.geom {
 			return out;
 		}
 		
-		
 		public static function cross(a:Vector3D, b:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -226,9 +233,11 @@ package zen.geom {
 			out.z = ((a.x * b.y) - (a.y * b.x));
 			return (out);
 		}
+		
 		public static function dot(a:Vector3D, w:Vector3D):Number {
-			return ( a.x * w.x + a.y * w.y + a.z * w.z );
+			return (a.x * w.x + a.y * w.y + a.z * w.z);
 		}
+		
 		public static function invert(a:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -238,15 +247,17 @@ package zen.geom {
 			out.z = -a.z;
 			return out;
 		}
+		
 		public static function pow(a:Vector3D, pow:Number, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
 			}
 			out.x = Math.pow(a.x, pow);
-	        out.y = Math.pow(a.y, pow);
-	        out.z = Math.pow(a.z, pow);
+			out.y = Math.pow(a.y, pow);
+			out.z = Math.pow(a.z, pow);
 			return out;
 		}
+		
 		public static function round(a:Vector3D, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -256,6 +267,7 @@ package zen.geom {
 			out.z = Math.round(a.z);
 			return out;
 		}
+		
 		public static function roundTo(a:Vector3D, decimals:int, out:Vector3D = null):Vector3D {
 			if (!out) {
 				out = new Vector3D();
@@ -268,13 +280,14 @@ package zen.geom {
 			out.z = Math.round(a.z * multiplier) / multiplier;
 			return out;
 		}
-		public static function modulo(a:Vector3D):Number {
-            return Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
-        }
-        public static function moduloSq(a:Vector3D):Number {
-            return a.x*a.x + a.y*a.y + a.z*a.z;
-        }
 		
+		public static function modulo(a:Vector3D):Number {
+			return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+		}
+		
+		public static function moduloSq(a:Vector3D):Number {
+			return a.x * a.x + a.y * a.y + a.z * a.z;
+		}
 		
 		/** return the direction vector for the given std view. DO NOT MODIFY THE RESULT! */
 		public static function standardView(view:int):Vector3D {
@@ -286,6 +299,7 @@ package zen.geom {
 		public static function pointBetween(a:Vector3D, center:Vector3D, length:Number, out:Vector3D = null):Vector3D {
 			return setLengthBetween(a, center, length, out);
 		}
+		
 		/** return the point between `a` and `center` (if length is 0, center is returned) */
 		public static function setLengthBetween(a:Vector3D, center:Vector3D, length:Number, out:Vector3D = null):Vector3D {
 			if (!out) {
@@ -303,8 +317,7 @@ package zen.geom {
 			}
 			return out;
 		}
-		
-		
+	
 	}
 }
 
