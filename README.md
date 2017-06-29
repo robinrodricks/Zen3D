@@ -1,8 +1,16 @@
 # Zen3D
 High-performance 3D engine for Adobe Flash &amp; AIR (GPU based)
 
-<img src="https://github.com/hgupta9/Zen3D/raw/master/images/zen1.png" alt="img1" width="250px">
-<img src="https://github.com/hgupta9/Zen3D/raw/master/images/zen2.png" alt="img2" width="250px">
+<table>
+<tr>
+<td>
+<img src="https://github.com/hgupta9/Zen3D/raw/master/images/zen1.png" alt="img1" width="300px">
+</td>
+<td>
+<img src="https://github.com/hgupta9/Zen3D/raw/master/images/zen2.png" alt="img2" width="300px">
+</td>
+</tr>
+</table>
 
 ## API
 
