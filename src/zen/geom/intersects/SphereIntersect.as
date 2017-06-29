@@ -13,6 +13,7 @@
 	import flash.events.*;
 	import flash.utils.*;
 	
+	/** Calculates intersection of 3D objects and a 3D sphere. */
 	public class SphereIntersect {
 		
 		private static const EPSILON:Number = 0.001;

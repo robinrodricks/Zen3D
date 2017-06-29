@@ -23,6 +23,8 @@
 	import flash.geom.*;
 	
 	[Event(name = "cange", type = "flash.events.Event")]
+	
+	/** Animates a 3D mesh using skin transform to support kinematics. */
 	public class ZenSkinModifier extends Modifier implements IEventDispatcher {
 		// to keep IEventDispatcher functions
 		

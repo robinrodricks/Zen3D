@@ -4,6 +4,7 @@
 	import flash.geom.Vector3D;
 	import zen.geom.*;
 	
+	/** A single 3D intersection between two objects */
 	public class Intersection3D {
 		
 		public var mesh:ZenMesh;

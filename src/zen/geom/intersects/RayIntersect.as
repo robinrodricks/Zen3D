@@ -16,6 +16,7 @@
 	import flash.events.*;
 	import flash.utils.*;
 	
+	/** Calculates intersection of 3D objects and a 3D ray. */
 	public class RayIntersect {
 		
 		private static var _collisionDistance:Number;

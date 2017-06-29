@@ -199,9 +199,9 @@
 		private var _viewPort:Rectangle;
 		
 		/**
-		 * Create a new Zen3D object.
-		 * @param	container	Object that will serve as container to render the scene. Preferably, it should be an empty MovieClip or Sprite. It must not be rotated or scaled.
-		 * @param	file	Optional name of the ~~.f3d file to be loaded into the scene. The file parameter is optional. If null, an empty scene is created. More ~~.f3d files can be subsequently added using the addChild or addChildFromFile method.
+		 * Create a new Zen3D instance and initialize the static classes.
+		 * 
+		 * @param	container	Sprite to hold the scene viewport. It must not be rotated or scaled.
 		 */
 		public function Zen3D(container:DisplayObjectContainer) {
 			init();

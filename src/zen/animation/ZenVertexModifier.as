@@ -4,6 +4,7 @@
 	import zen.display.*;
 	import zen.shaders.textures.ShaderMaterialBase;
 	
+	/** Animates a single 3D vertex of a mesh using linear interpolation. */
 	public class ZenVertexModifier extends Modifier {
 		
 		public var frames:Vector.<Vector.<Number>>;

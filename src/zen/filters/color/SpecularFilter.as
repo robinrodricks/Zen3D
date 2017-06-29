@@ -4,7 +4,7 @@
 	import zen.shaders.*;
 	import flash.utils.*;
 	
-	/** A material filter that modifies the specular values */
+	/** A material filter that responds to scene lighting supporting specular lighting */
 	public class SpecularFilter extends ShaderFilter {
 		
 		[Embed(source = "../../utils/assets/effects/SpecularFilter.data", mimeType = "application/octet-stream")]

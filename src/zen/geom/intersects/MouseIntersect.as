@@ -7,6 +7,7 @@
 	import flash.utils.*;
 	import zen.display.*;
 	
+	/** Calculates intersection of 3D objects and the mouse, or any 2D point. */
 	public class MouseIntersect {
 		
 		private static var _pos:Vector3D = new Vector3D();
